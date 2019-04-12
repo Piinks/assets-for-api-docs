@@ -36,11 +36,13 @@ class _Diagram extends StatelessWidget {
   Widget build(BuildContext context) {
     return new MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: new Material(
+      home:
+      new Material(
         child: new Builder(
           builder: (BuildContext context) {
-            return new Center(
-              child: new RepaintBoundary(
+            return new Scaffold(
+              body:
+              new RepaintBoundary(
                 key: boundaryKey,
                 child: child,
               ),
@@ -304,7 +306,7 @@ class DiagramController {
   ///
   /// Time will be advanced to [timestamp] before taking the snapshot.
   Future<ui.Image> drawDiagramToImage({Duration timestamp: Duration.zero}) {
-    advanceTime(timestamp);
+    advanceTime(Duration.zero);
     return _binding.takeSnapshot();
   }
 
