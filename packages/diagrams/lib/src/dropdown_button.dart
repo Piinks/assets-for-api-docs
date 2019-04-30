@@ -81,20 +81,14 @@ class DropdownButtonDiagramState extends State<DropdownButtonDiagram> {
   // overlay menu being mis-aligned.
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
+    return new ConstrainedBox(
       key: new UniqueKey(),
       constraints: new BoxConstraints.tight(const Size(350.0, 400.0)),
       child: Navigator(onGenerateRoute: (RouteSettings s) {
         return NoAnimationMaterialPageRoute<void>(builder: (BuildContext context) {
-          return new ConstrainedBox(
-            key: new UniqueKey(),
-            constraints: new BoxConstraints.tight(const Size(350.0, 400.0)),
-            child: new Container(
-              alignment: FractionalOffset.center,
-              padding: const EdgeInsets.all(10.0),
-              color: Colors.white,
-              child: Center(
-                child:
+          return
+//            Center(
+//                child:
               DropdownButton<int>(
                   key: _dropdownKey,
                   hint: const Text('Select build mode...'),
@@ -108,10 +102,8 @@ class DropdownButtonDiagramState extends State<DropdownButtonDiagram> {
                     3,
                       (int index) => DropdownMenuItem<int>(
                       value: index, child: dropdownItems[index])),
-                ),
-              ),
-            ),
-          );
+//                ),
+              );
         });
       }),
     );

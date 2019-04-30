@@ -40,8 +40,7 @@ class _Diagram extends StatelessWidget {
       new Material(
         child: new Builder(
           builder: (BuildContext context) {
-            return new Scaffold(
-              body:
+            return new Center(child:
               new RepaintBoundary(
                 key: boundaryKey,
                 child: child,
