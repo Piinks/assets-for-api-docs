@@ -76,9 +76,6 @@ class DropdownButtonDiagramState extends State<DropdownButtonDiagram> {
     ),
   ];
 
-  // TODO(): Trouble shoot Solution A or B
-  // Solution A: The following build method results in the DropdownButton and subsequent
-  // overlay menu being mis-aligned.
   @override
   Widget build(BuildContext context) {
     return new ConstrainedBox(
@@ -86,66 +83,24 @@ class DropdownButtonDiagramState extends State<DropdownButtonDiagram> {
       constraints: new BoxConstraints.tight(const Size(350.0, 400.0)),
       child: Navigator(onGenerateRoute: (RouteSettings s) {
         return NoAnimationMaterialPageRoute<void>(builder: (BuildContext context) {
-          return
-//            Center(
-//                child:
-              DropdownButton<int>(
-                  key: _dropdownKey,
-                  hint: const Text('Select build mode...'),
-                  value: _index,
-                  onChanged: (int index) {
-                    setState(() {
-                      _index = index;
-                    });
-                  },
-                  items: new List<DropdownMenuItem<int>>.generate(
-                    3,
-                      (int index) => DropdownMenuItem<int>(
-                      value: index, child: dropdownItems[index])),
-//                ),
-              );
+          return DropdownButton<int>(
+            key: _dropdownKey,
+            hint: const Text('Select build mode...'),
+            value: _index,
+            onChanged: (int index) {
+              setState(() {
+                _index = index;
+              });
+            },
+            items: new List<DropdownMenuItem<int>>.generate(
+              3,
+              (int index) => DropdownMenuItem<int>(value: index, child: dropdownItems[index]),
+            ),
+          );
         });
       }),
     );
   }
-
-// Solution B: The following successfully generates the desired animation, but with a frame
-// size of 1000x1000
-
-//  @override
-//  Widget build(BuildContext context) {
-//    return Navigator(
-//      onGenerateRoute: (RouteSettings s) {
-//        return MaterialPageRoute<void>(builder: (BuildContext context) {
-//          return new ConstrainedBox(
-//            key: new UniqueKey(),
-//            constraints: new BoxConstraints.tight(const Size(350.0, 400.0)),
-//            child: new Container(
-//              alignment: FractionalOffset.center,
-//              padding: const EdgeInsets.all(10.0),
-//              color: Colors.white,
-//              child: Center(
-//                child: DropdownButton<int>(
-//                  key: _dropdownKey,
-//                  hint: const Text('Select build  mode...'),
-//                  value: _index,
-//                  onChanged: (int index) => setState(() => _index = index),
-//
-//                  items: new List<DropdownMenuItem<int>>.generate(
-//                    3,
-//                      (int index) => DropdownMenuItem<int>(
-//                        value: index,
-//                        child: dropdownItems[index],
-//                      ),
-//                  ),
-//                ),
-//              ),
-//            ),
-//          );
-//        });
-//        },
-//    );
-//  }
 }
 
 class DropdownButtonDiagramStep extends DiagramStep {
@@ -165,8 +120,7 @@ class DropdownButtonDiagramStep extends DiagramStep {
         targetOffset = target.localToGlobal(target.size.center(Offset.zero));
         break;
       case 4100:
-        targetOffset =
-            target.localToGlobal(target.size.bottomLeft(Offset.zero));
+        targetOffset = target.localToGlobal(target.size.bottomLeft(Offset.zero));
         break;
       default:
         return;
