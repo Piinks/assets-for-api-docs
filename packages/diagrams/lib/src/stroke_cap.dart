@@ -1,11 +1,10 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:async';
 import 'dart:io';
 
-import 'package:diagram_capture/diagram_capture.dart';
 import 'package:flutter/material.dart';
 
 import 'diagram_step.dart';
@@ -15,23 +14,23 @@ const double _kFontSize = 14.0;
 class StrokeCapDescription extends CustomPainter {
   StrokeCapDescription({
     this.filename,
-    this.cap,
+    required this.cap,
   }) : _capPainter = _createLabelPainter(cap.toString());
 
   static const EdgeInsets padding = EdgeInsets.all(3.0);
 
-  final String filename;
+  final String? filename;
   final StrokeCap cap;
   final TextPainter _capPainter;
 
   Widget get widget {
-    return new ConstrainedBox(
+    return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 130.0),
-      child: new AspectRatio(
+      child: AspectRatio(
         aspectRatio: 1.0,
-        child: new Padding(
+        child: Padding(
           padding: const EdgeInsets.all(3.0),
-          child: new CustomPaint(
+          child: CustomPaint(
             painter: this,
           ),
         ),
@@ -39,12 +38,13 @@ class StrokeCapDescription extends CustomPainter {
     );
   }
 
-  static TextPainter _createLabelPainter(String label, {FontStyle style: FontStyle.normal}) {
-    final TextPainter result = new TextPainter(
+  static TextPainter _createLabelPainter(String label,
+      {FontStyle style = FontStyle.normal}) {
+    final TextPainter result = TextPainter(
       textDirection: TextDirection.ltr,
-      text: new TextSpan(
+      text: TextSpan(
         text: label,
-        style: new TextStyle(
+        style: TextStyle(
           color: Colors.black,
           fontStyle: style,
           fontSize: _kFontSize,
@@ -58,41 +58,42 @@ class StrokeCapDescription extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     assert(size != Size.zero);
-    final Offset center = new Offset(size.width / 2.0, (size.height - _capPainter.height - padding.vertical) / 2.0);
-    final Offset start = new Offset(0.0, center.dy);
-    final Offset middle = new Offset(size.width / 2.0, center.dy);
+    final Offset center = Offset(size.width / 2.0,
+        (size.height - _capPainter.height - padding.vertical) / 2.0);
+    final Offset start = Offset(0.0, center.dy);
+    final Offset middle = Offset(size.width / 2.0, center.dy);
 
-    final Paint startPaint = new Paint()
+    final Paint startPaint = Paint()
       ..color = Colors.grey
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.square
       ..strokeWidth = 20.0;
-    final Paint linePaint = new Paint()
+    final Paint linePaint = Paint()
       ..color = Colors.grey
       ..style = PaintingStyle.stroke
       ..strokeCap = cap
       ..strokeWidth = 20.0;
-    final Paint endPaint = new Paint()
+    final Paint endPaint = Paint()
       ..color = Colors.deepPurpleAccent
       ..style = PaintingStyle.stroke
       ..strokeCap = cap
       ..strokeWidth = 20.0;
 
-    Path line = new Path() // Line
+    Path line = Path() // Line
       ..moveTo(start.dx, start.dy)
       ..lineTo(middle.dx, middle.dy);
     canvas.drawPath(line, linePaint);
-    line = new Path() // Start point, so that it doesn't show the starting end cap.
+    line = Path() // Start point, so that it doesn't show the starting end cap.
       ..moveTo(start.dx, start.dy)
       ..lineTo(start.dx, start.dy);
     canvas.drawPath(line, startPaint);
-    line = new Path() // End point, a different color to highlight the cap.
+    line = Path() // End point, a different color to highlight the cap.
       ..moveTo(middle.dx, middle.dy)
       ..lineTo(middle.dx, middle.dy);
     canvas.drawPath(line, endPaint);
     _capPainter.paint(
       canvas,
-      new Offset(
+      Offset(
         padding.left,
         size.height - (padding.bottom + 3.0 + _capPainter.height),
       ),
@@ -106,7 +107,8 @@ class StrokeCapDescription extends CustomPainter {
 }
 
 class StrokeCapDiagram extends StatelessWidget implements DiagramMetadata {
-  const StrokeCapDiagram({this.name, this.cap: StrokeCap.round});
+  const StrokeCapDiagram(
+      {required this.name, this.cap = StrokeCap.round, super.key});
 
   @override
   final String name;
@@ -114,24 +116,24 @@ class StrokeCapDiagram extends StatelessWidget implements DiagramMetadata {
 
   @override
   Widget build(BuildContext context) {
-    final StrokeCapDescription description = new StrokeCapDescription(
+    final StrokeCapDescription description = StrokeCapDescription(
       cap: cap,
     );
 
-    return new ConstrainedBox(
-      key: new UniqueKey(),
-      constraints: new BoxConstraints.tight(const Size(150.0, 100.0)),
-      child: new Container(
+    return ConstrainedBox(
+      key: UniqueKey(),
+      constraints: BoxConstraints.tight(const Size(150.0, 100.0)),
+      child: Container(
         padding: const EdgeInsets.all(18.0),
         color: Colors.white,
-        child: new CustomPaint(painter: description),
+        child: CustomPaint(painter: description),
       ),
     );
   }
 }
 
-class StrokeCapDiagramStep extends DiagramStep {
-  StrokeCapDiagramStep(DiagramController controller) : super(controller) {
+class StrokeCapDiagramStep extends DiagramStep<StrokeCapDiagram> {
+  StrokeCapDiagramStep(super.controller) {
     _diagrams.addAll(<StrokeCapDiagram>[
       const StrokeCapDiagram(
         name: 'butt_cap',
@@ -139,7 +141,6 @@ class StrokeCapDiagramStep extends DiagramStep {
       ),
       const StrokeCapDiagram(
         name: 'round_cap',
-        cap: StrokeCap.round,
       ),
       const StrokeCapDiagram(
         name: 'square_cap',
@@ -154,12 +155,11 @@ class StrokeCapDiagramStep extends DiagramStep {
   final List<StrokeCapDiagram> _diagrams = <StrokeCapDiagram>[];
 
   @override
-  Future<List<DiagramMetadata>> get diagrams async => _diagrams;
+  Future<List<StrokeCapDiagram>> get diagrams async => _diagrams;
 
   @override
-  Future<File> generateDiagram(DiagramMetadata diagram) async {
-    final StrokeCapDiagram typedDiagram = diagram;
-    controller.builder = (BuildContext context) => typedDiagram;
-    return await controller.drawDiagramToFile(new File('${diagram.name}.png'));
+  Future<File> generateDiagram(StrokeCapDiagram diagram) async {
+    controller.builder = (BuildContext context) => diagram;
+    return controller.drawDiagramToFile(File('${diagram.name}.png'));
   }
 }

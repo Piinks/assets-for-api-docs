@@ -1,10 +1,8 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:animation_metadata/animation_metadata.dart';
@@ -22,25 +20,22 @@ import 'package:vector_math/vector_math_64.dart';
 // the needed structure for capturing them.
 class _Diagram extends StatelessWidget {
   const _Diagram({
-    Key key,
-    @required this.boundaryKey,
-    @required this.child,
-  })  : assert(child != null),
-        assert(boundaryKey != null),
-        super(key: key);
+    required this.boundaryKey,
+    required this.child,
+  });
 
   final GlobalKey boundaryKey;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: new Material(
-        child: new Builder(
+      home: Material(
+        child: Builder(
           builder: (BuildContext context) {
-            return new Center(
-              child: new RepaintBoundary(
+            return Center(
+              child: RepaintBoundary(
                 key: boundaryKey,
                 child: child,
               ),
@@ -60,10 +55,8 @@ const Size _kDefaultDiagramViewportSize = Size(1280.0, 1024.0);
 // captured image pixels.
 class _DiagramViewConfiguration extends ViewConfiguration {
   _DiagramViewConfiguration({
-    double pixelRatio: 1.0,
-    Size size: _kDefaultDiagramViewportSize,
-  })  : _paintMatrix = _getMatrix(size, ui.window.devicePixelRatio),
-        super(size: size);
+    super.size = _kDefaultDiagramViewportSize,
+  }) : _paintMatrix = _getMatrix(size, ui.window.devicePixelRatio);
 
   static Matrix4 _getMatrix(Size size, double devicePixelRatio) {
     final double inverseRatio = devicePixelRatio / ui.window.devicePixelRatio;
@@ -81,10 +74,10 @@ class _DiagramViewConfiguration extends ViewConfiguration {
       shiftX = 0.0;
       shiftY = (actualHeight - desiredHeight * scale) / 2.0;
     }
-    final Matrix4 matrix = new Matrix4.compose(
-        new Vector3(shiftX, shiftY, 0.0), // translation
-        new Quaternion.identity(), // rotation
-        new Vector3(scale, scale, 1.0) // scale
+    final Matrix4 matrix = Matrix4.compose(
+        Vector3(shiftX, shiftY, 0.0), // translation
+        Quaternion.identity(), // rotation
+        Vector3(scale, scale, 1.0) // scale
         );
     return matrix;
   }
@@ -99,55 +92,117 @@ class _DiagramViewConfiguration extends ViewConfiguration {
 }
 
 // Provides a concrete implementation of WidgetController.
-class _DiagramWidgetController extends WidgetController {
-  _DiagramWidgetController(WidgetsBinding binding) : super(binding);
+class _DiagramWidgetController extends WidgetController
+    implements TickerProvider {
+  _DiagramWidgetController(super.binding) : _tickers = <_DiagramTicker>{};
 
   @override
-  _DiagramFlutterBinding get binding => super.binding;
+  DiagramFlutterBinding get binding => super.binding as DiagramFlutterBinding;
 
   @override
-  Future<Null> pump([
-    Duration duration
+  Future<void> pump([
+    Duration duration = Duration.zero,
   ]) {
     return TestAsyncUtils.guard(() => binding.pump(duration: duration));
   }
+
+  final Set<Ticker> _tickers;
+
+  @override
+  Ticker createTicker(TickerCallback onTick) {
+    final _DiagramTicker result = _DiagramTicker(onTick, _removeTicker);
+    _tickers.add(result);
+    return result;
+  }
+
+  void _removeTicker(_DiagramTicker ticker) {
+    assert(_tickers.contains(ticker));
+    _tickers.remove(ticker);
+  }
+
+  @override
+  Future<List<Duration>> handlePointerEventRecord(
+      List<PointerEventRecord> records) async {
+    return const <Duration>[];
+  }
+
+  @override
+  Future<int> pumpAndSettle([
+    Duration duration = const Duration(milliseconds: 100),
+    EnginePhase phase = EnginePhase.sendSemanticsUpdate,
+  ]) {
+    assert(duration > Duration.zero);
+    assert(() {
+      final WidgetsBinding binding = this.binding;
+      if (binding is LiveTestWidgetsFlutterBinding &&
+          binding.framePolicy ==
+              LiveTestWidgetsFlutterBindingFramePolicy.benchmark) {
+        throw StateError(
+          'When using LiveTestWidgetsFlutterBindingFramePolicy.benchmark, '
+          'hasScheduledFrame is never set to true. This means that pumpAndSettle() '
+          'cannot be used, because it has no way to know if the application has '
+          'stopped registering new frames.',
+        );
+      }
+      return true;
+    }());
+    return TestAsyncUtils.guard<int>(() async {
+      int count = 0;
+      do {
+        await binding.pump(duration: duration);
+        count += 1;
+      } while (binding.hasScheduledFrame);
+      return count;
+    });
+  }
 }
 
-// Provides a binding different from the regular Flutter binding so that
-// diagrams can control their timeline and physical device size.
-class _DiagramFlutterBinding extends BindingBase
+typedef _TickerDisposeCallback = void Function(_DiagramTicker ticker);
+
+class _DiagramTicker extends Ticker {
+  _DiagramTicker(super.onTick, this._onDispose);
+
+  final _TickerDisposeCallback _onDispose;
+
+  @override
+  void dispose() {
+    _onDispose(this);
+    super.dispose();
+  }
+}
+
+/// Provides a binding different from the regular Flutter binding so that
+/// diagrams can control their timeline and physical device size.
+class DiagramFlutterBinding extends BindingBase
     with
         GestureBinding,
         SemanticsBinding,
-        ServicesBinding,
         SchedulerBinding,
+        ServicesBinding,
         PaintingBinding,
         RendererBinding,
         WidgetsBinding {
   @override
   void initInstances() {
     super.initInstances();
-    _controller = new _DiagramWidgetController(this);
+    _controller = _DiagramWidgetController(this);
   }
 
-  WidgetController _controller;
+  late _DiagramWidgetController _controller;
 
-  /// The current [_DiagramFlutterBinding], if one has been created.
-  static _DiagramFlutterBinding get instance {
-    _instance ??= new _DiagramFlutterBinding();
-    return _instance;
-  }
+  /// The current [DiagramFlutterBinding], if one has been created.
+  static DiagramFlutterBinding get instance => ensureInitialized()!;
 
-  static _DiagramFlutterBinding _instance;
+  static DiagramFlutterBinding? _instance;
 
   @override
-  void handleBeginFrame(Duration rawTimeStamp) {
+  void handleBeginFrame(Duration? rawTimeStamp) {
     // Override the timestamp so time doesn't pass unless we want it to.
     super.handleBeginFrame(_timestamp);
   }
 
   Duration _timestamp = Duration.zero;
-  final GlobalKey _boundaryKey = new GlobalKey();
+  final GlobalKey _boundaryKey = GlobalKey();
 
   /// Determines the ratio between physical units and logical units.
   ///
@@ -174,49 +229,56 @@ class _DiagramFlutterBinding extends BindingBase
     handleMetricsChanged();
   }
 
-  Future<TestGesture> startGesture(Offset downLocation, {int pointer}) {
+  TickerProvider get vsync => _controller;
+
+  Future<TestGesture> startGesture(Offset downLocation, {int? pointer}) {
     return _controller.startGesture(downLocation, pointer: pointer);
   }
 
   @override
   ViewConfiguration createViewConfiguration() {
-    return new _DiagramViewConfiguration(
-      pixelRatio: pixelRatio,
+    return _DiagramViewConfiguration(
       size: screenDimensions,
     );
   }
 
   /// Captures an image of the [RepaintBoundary] with the given key.
   Future<ui.Image> takeSnapshot() {
-    final RenderRepaintBoundary object = _boundaryKey.currentContext.findRenderObject();
+    final RenderRepaintBoundary object = _boundaryKey.currentContext!
+        .findRenderObject()! as RenderRepaintBoundary;
     return object.toImage(pixelRatio: pixelRatio);
   }
 
   /// Updates the current diagram with the given builder as the child of the
-  /// root widget, and generates a new frame.
+  /// root widget, and generates a frame.
   void updateDiagram(
     WidgetBuilder builder, {
-    Duration duration: Duration.zero,
+    Duration duration = Duration.zero,
   }) {
-    final Widget rootWidget = new _Diagram(
+    final Widget rootWidget = _Diagram(
       boundaryKey: _boundaryKey,
-      child: new Builder(builder: builder),
+      child: Builder(builder: builder),
     );
     attachRootWidget(rootWidget);
     pump();
   }
 
-  /// Advances time by the given duration, and generates a new frame.
+  /// Advances time by the given duration, and generates a frame.
   ///
   /// The [duration] must not be null, or less than [Duration.zero].
-  Future<Null>  pump({Duration duration: Duration.zero}) {
-    assert(duration != null);
+  Future<void> pump({Duration duration = Duration.zero}) {
     assert(duration >= Duration.zero);
     _timestamp += duration;
-
     handleBeginFrame(_timestamp);
     handleDrawFrame();
-    return new Future<Null>.value();
+    return Future<void>.value();
+  }
+
+  /// Ensures the binding has been initialized before accessing the default
+  /// binary messenger.
+  static DiagramFlutterBinding? ensureInitialized() {
+    _instance ??= DiagramFlutterBinding();
+    return _instance;
   }
 }
 
@@ -229,6 +291,11 @@ typedef AnimationFilenameGenerator = File Function();
 /// beginning of the animation).
 typedef DiagramKeyframe = void Function(Duration duration);
 
+/// A callback given to drawAnimatedDiagramToFiles that is called for each
+/// frame.
+typedef DiagramGestureCallback = void Function(
+    DiagramController diagram, Duration now);
+
 /// A controller for creating diagrams generated by using Flutter widgets.
 ///
 /// This is used to configure and create individual image diagrams, as well as
@@ -236,15 +303,17 @@ typedef DiagramKeyframe = void Function(Duration duration);
 class DiagramController {
   /// Creates a diagram controller for generating images of diagrams.
   DiagramController({
-    WidgetBuilder builder,
-    this.outputDirectory,
-    double pixelRatio: 1.0,
-    Size screenDimensions: _kDefaultDiagramViewportSize,
-  }) {
-    outputDirectory ??= Directory.current;
-    _binding.pixelRatio = pixelRatio;
+    WidgetBuilder? builder,
+    Directory? outputDirectory,
+    double? pixelRatio,
+    Size screenDimensions = _kDefaultDiagramViewportSize,
+  })  : outputDirectory = outputDirectory ?? Directory.current,
+        _builder = builder {
+    _binding.pixelRatio = pixelRatio ?? ui.window.devicePixelRatio;
     _binding.screenDimensions = screenDimensions;
-    this.builder = builder;
+    if (_builder != null) {
+      _binding.updateDiagram(_builder!);
+    }
   }
 
   /// The builder used to generate each frame of the diagram.
@@ -252,13 +321,15 @@ class DiagramController {
   /// If the [builder] is changed, then the widget it builds will be used for
   /// subsequent frames drawn of the diagram.
   ///
-  /// Defaults to the `initialBuilder` given to [new DiagramController].
-  WidgetBuilder get builder => _builder;
-  WidgetBuilder _builder;
-  set builder(WidgetBuilder builder) {
+  /// Defaults to the `initialBuilder` given to [DiagramController].
+  WidgetBuilder? get builder => _builder;
+  WidgetBuilder? _builder;
+  set builder(WidgetBuilder? builder) {
     if (_builder != builder) {
       _builder = builder;
-      _binding.updateDiagram(builder);
+      if (builder != null) {
+        _binding.updateDiagram(builder);
+      }
     }
   }
 
@@ -279,15 +350,18 @@ class DiagramController {
   double get pixelRatio => _binding.pixelRatio;
   set pixelRatio(double ratio) => _binding.pixelRatio = ratio;
 
-  _DiagramFlutterBinding get _binding => _DiagramFlutterBinding.instance;
+  TickerProvider get vsync => _binding.vsync;
+
+  DiagramFlutterBinding get _binding => DiagramFlutterBinding.instance;
 
   /// Start a gesture.  The returned [TestGesture] can be used to provide
   /// further interaction. It may be necessary to call [advanceTime] with
   /// no arguments to schedule a frame after interacting with the returned
   /// gesture ([startGesture] automatically does this for you for the initial
   /// tap down event).
-  Future<TestGesture> startGesture(Offset location, {int pointer}) async {
-    final TestGesture gesture = await _binding.startGesture(location, pointer: pointer);
+  Future<TestGesture> startGesture(Offset location, {int? pointer}) async {
+    final TestGesture gesture =
+        await _binding.startGesture(location, pointer: pointer);
     advanceTime(); // Schedule a frame.
     return gesture;
   }
@@ -295,7 +369,8 @@ class DiagramController {
   /// Advances the animation clock by the given duration.
   ///
   /// The [increment] must be greater than, or equal to, [Duration.zero].
-  void advanceTime([Duration increment]) => _binding.pump(duration: increment ?? Duration.zero);
+  void advanceTime([Duration increment = Duration.zero]) =>
+      _binding.pump(duration: increment);
 
   /// Returns an [image.Image] representing the current diagram.
   ///
@@ -303,7 +378,7 @@ class DiagramController {
   /// [builder] in logical coordinates, multiplied by the [pixelRatio].
   ///
   /// Time will be advanced to [timestamp] before taking the snapshot.
-  Future<ui.Image> drawDiagramToImage({Duration timestamp: Duration.zero}) {
+  Future<ui.Image> drawDiagramToImage({Duration timestamp = Duration.zero}) {
     advanceTime(timestamp);
     return _binding.takeSnapshot();
   }
@@ -317,18 +392,18 @@ class DiagramController {
   /// snapshot.
   Future<File> drawDiagramToFile(
     File outputFile, {
-    Duration timestamp: Duration.zero,
-    ui.ImageByteFormat format: ui.ImageByteFormat.png,
+    Duration timestamp = Duration.zero,
+    ui.ImageByteFormat format = ui.ImageByteFormat.png,
   }) async {
-    assert(outputFile != null);
-    if (!outputFile.isAbsolute && outputDirectory != null) {
+    if (!outputFile.isAbsolute) {
       // If output path is relative, make it relative to the output directory.
-      outputFile = new File(path.join(outputDirectory.absolute.path, outputFile.path));
+      outputFile =
+          File(path.join(outputDirectory.absolute.path, outputFile.path));
     }
     assert(outputFile.path.endsWith('.png'));
     final ui.Image captured = await drawDiagramToImage(timestamp: timestamp);
-    final ByteData encoded = await captured.toByteData(format: format);
-    final List<int> bytes = encoded.buffer.asUint8List().toList();
+    final ByteData? encoded = await captured.toByteData(format: format);
+    final List<int> bytes = encoded!.buffer.asUint8List().toList();
     print('Writing ${bytes.length} bytes, ${captured.width}x${captured.height} '
         '${_byteFormatToString(format)}, to: ${outputFile.absolute.path}');
     await outputFile.writeAsBytes(bytes);
@@ -350,13 +425,10 @@ class DiagramController {
   /// less than or equal to the time between [start] and [end]. All durations
   /// must be greater than [Duration.zero].
   Future<List<ui.Image>> drawAnimatedDiagramToImages({
-    Duration start: Duration.zero,
-    @required Duration end,
-    @required Duration frameDuration,
+    Duration start = Duration.zero,
+    required Duration end,
+    required Duration frameDuration,
   }) async {
-    assert(end != null);
-    assert(start != null);
-    assert(frameDuration != null);
     assert(end >= start);
     assert(frameDuration <= (end - start));
     assert(frameDuration > Duration.zero);
@@ -403,49 +475,51 @@ class DiagramController {
   /// than [Duration.zero]. The [start] parameter must be greater than or equal
   /// to [Duration.zero]. The [frameRate] must be greater than zero.
   Future<File> drawAnimatedDiagramToFiles({
-    Duration start: Duration.zero,
-    @required Duration end,
-    @required double frameRate,
-    ui.ImageByteFormat format: ui.ImageByteFormat.png,
-    @required String name,
-    String category,
-    Map<Duration, DiagramKeyframe> keyframes,
+    required Duration end,
+    Duration start = Duration.zero,
+    required double frameRate,
+    ui.ImageByteFormat format = ui.ImageByteFormat.png,
+    required String name,
+    String? category,
+    Map<Duration, DiagramKeyframe>? keyframes,
+    DiagramGestureCallback? gestureCallback,
   }) async {
-    assert(name != null);
-    assert(end != null);
-    assert(start != null);
-    assert(frameRate != null);
     assert(end >= start);
     assert(frameRate > 0.0);
     assert(end > Duration.zero);
     assert(start >= Duration.zero);
 
     Duration now = start;
-    final Duration frameDuration = new Duration(microseconds: (1e6 / frameRate).round());
+    final Duration frameDuration =
+        Duration(microseconds: (1e6 / frameRate).round());
     int index = 0;
     final List<File> outputFiles = <File>[];
-    List<Duration> keys;
+    List<Duration> keys = <Duration>[];
     if (keyframes != null) {
-      keys = keyframes.keys.toList()
-        ..sort();
+      keys = keyframes.keys.toList()..sort();
     }
     // Add an half-frame to account for possible rounding error: we want
     // to make sure to get the last frame.
-    while (now <= (end + new Duration(microseconds: frameDuration.inMicroseconds ~/ 2))) {
+    while (now <=
+        (end + Duration(microseconds: frameDuration.inMicroseconds ~/ 2))) {
       // If we've arrived at the next keyframe, then call the keyframe
       // function to execute the next event.
-      if (keys != null && keys.isNotEmpty) {
+      if (keyframes != null && keys.isNotEmpty) {
         if (now >= keys.first) {
-          keyframes[keys.first](now);
+          keyframes[keys.first]!(now);
           keys.removeAt(0);
         }
       }
 
+      if (gestureCallback != null) {
+        gestureCallback(this, now);
+      }
       final File outputFile = _getFrameFilename(now, index, name);
       final ui.Image captured = await drawDiagramToImage();
-      final ByteData encoded = await captured.toByteData(format: format);
-      final List<int> bytes = encoded.buffer.asUint8List().toList();
-      print('Writing frame $index ($now), ${bytes.length} bytes, ${captured.width}x${captured.height} '
+      final ByteData? encoded = await captured.toByteData(format: format);
+      final List<int> bytes = encoded!.buffer.asUint8List().toList();
+      print(
+          'Writing frame $index ($now), ${bytes.length} bytes, ${captured.width}x${captured.height} '
           '${_byteFormatToString(format)}, to: ${outputFile.absolute.path}');
       outputFile.writeAsBytesSync(bytes);
       advanceTime(frameDuration);
@@ -453,8 +527,9 @@ class DiagramController {
       now += frameDuration;
       ++index;
     }
-    final File metadataFile = new File(path.join(outputDirectory.absolute.path, '$name.json'));
-    final AnimationMetadata metadata = new AnimationMetadata.fromData(
+    final File metadataFile =
+        File(path.join(outputDirectory.absolute.path, '$name.json'));
+    final AnimationMetadata metadata = AnimationMetadata.fromData(
       name: name,
       category: category,
       duration: end - start,
@@ -473,12 +548,13 @@ class DiagramController {
         return 'NATIVE';
       case ui.ImageByteFormat.png:
         return 'PNG';
+      case ui.ImageByteFormat.rawStraightRgba:
+        return 'RAW STRAIGHT RGBA';
     }
-    return null;
   }
 
   File _getFrameFilename(Duration timestamp, int index, String name) {
-    return new File(
+    return File(
       path.join(
         outputDirectory.absolute.path,
         '${name}_${index.toString().padLeft(5, '0')}.png',

@@ -1,23 +1,25 @@
 name: diagram_capture
 description: A package for capturing images of diagrams with Flutter.
-version: 0.0.1
-author: Chromium Authors
-homepage: http://www.flutter.io
+repository: https://github.com/flutter/assets-for-api-docs/tree/master/packages/diagram_capture
+issue_tracker: https://github.com/flutter/flutter/issues
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=2.17.0-0 <3.0.0"
+  flutter: ">=1.0.0 <4.0.0"
 
 dependencies:
-  flutter:
-    sdk: flutter
-  path_provider: any
-  path: ^1.6.2
   animation_metadata:
     path: ../animation_metadata
-
-dev_dependencies:
+  flutter:
+    sdk: flutter
   flutter_test:
     sdk: flutter
-  image: ^2.0.4
-  
-environment:
-  sdk: ">=2.2.0 <3.0.0"
-  flutter: ">=0.1.4 <2.0.0"
+  path: ^1.8.0
+  path_provider: ^2.0.1
+  vector_math: ^2.1.2
+
+dev_dependencies:
+  image: ^3.0.2
 

@@ -1,75 +1,75 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
 import 'dart:io';
 
-import 'package:diagram_capture/diagram_capture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'diagram_step.dart';
 import 'utils.dart';
 
-final GlobalKey splashKey = new GlobalKey();
+final GlobalKey splashKey = GlobalKey();
 
-class InkResponseLargeDiagram extends StatelessWidget implements DiagramMetadata {
-  InkResponseLargeDiagram({Key key}) : super(key: key);
+class InkResponseLargeDiagram extends StatelessWidget
+    implements DiagramMetadata {
+  InkResponseLargeDiagram({super.key});
 
-  final GlobalKey canvasKey = new GlobalKey();
-  final GlobalKey childKey = new GlobalKey();
-  final GlobalKey heroKey = new GlobalKey();
+  final GlobalKey canvasKey = GlobalKey();
+  final GlobalKey childKey = GlobalKey();
+  final GlobalKey heroKey = GlobalKey();
 
   @override
   String get name => 'ink_response_large';
 
   @override
   Widget build(BuildContext context) {
-    return new ConstrainedBox(
-      key: new UniqueKey(),
-      constraints: new BoxConstraints.tight(const Size(280.0, 180.0)),
-      child: new Theme(
-        data: new ThemeData(
+    return ConstrainedBox(
+      key: UniqueKey(),
+      constraints: BoxConstraints.tight(const Size(280.0, 180.0)),
+      child: Theme(
+        data: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        child: new Material(
+        child: Material(
           color: const Color(0xFFFFFFFF),
-          child: new Stack(
+          child: Stack(
             children: <Widget>[
-              new Center(
-                child: new Container(
+              Center(
+                child: SizedBox(
                   width: 150.0,
                   height: 100.0,
-                  child: new InkResponse(
+                  child: InkResponse(
                     key: heroKey,
                     onTap: () {},
-                    child: new Hole(
+                    child: Hole(
                       color: Colors.blue,
                       key: childKey,
                     ),
                   ),
                 ),
               ),
-              new Center(
-                child: new Container(
+              Center(
+                child: Container(
                   width: 120.0,
                   height: 80.0,
                   alignment: FractionalOffset.bottomRight,
-                  child: new Container(
+                  child: SizedBox(
                     key: splashKey,
                     width: 20.0,
                     height: 25.0,
                   ),
                 ),
               ),
-              new Positioned.fill(
-                child: new LabelPainterWidget(
+              Positioned.fill(
+                child: LabelPainterWidget(
                   key: canvasKey,
                   labels: <Label>[
-                    new Label(childKey, 'child', const FractionalOffset(0.2, 0.8)),
-                    new Label(splashKey, 'splash', const FractionalOffset(0.0, 0.0)),
-                    new Label(heroKey, 'highlight', const FractionalOffset(0.45, 0.3)),
+                    Label(childKey, 'child', const FractionalOffset(0.2, 0.8)),
+                    Label(splashKey, 'splash', FractionalOffset.topLeft),
+                    Label(heroKey, 'highlight',
+                        const FractionalOffset(0.45, 0.3)),
                   ],
                   heroKey: heroKey,
                 ),
@@ -82,9 +82,9 @@ class InkResponseLargeDiagram extends StatelessWidget implements DiagramMetadata
   }
 }
 
-class InkResponseLargeDiagramStep extends DiagramStep {
-  InkResponseLargeDiagramStep(DiagramController controller) : super(controller) {
-    _diagrams.add(new InkResponseLargeDiagram());
+class InkResponseLargeDiagramStep extends DiagramStep<InkResponseLargeDiagram> {
+  InkResponseLargeDiagramStep(super.controller) {
+    _diagrams.add(InkResponseLargeDiagram());
   }
 
   final List<InkResponseLargeDiagram> _diagrams = <InkResponseLargeDiagram>[];
@@ -93,18 +93,19 @@ class InkResponseLargeDiagramStep extends DiagramStep {
   final String category = 'material';
 
   @override
-  Future<List<DiagramMetadata>> get diagrams async => _diagrams;
+  Future<List<InkResponseLargeDiagram>> get diagrams async => _diagrams;
 
   @override
-  Future<File> generateDiagram(DiagramMetadata diagram) async {
-    final InkResponseLargeDiagram typedDiagram = diagram;
-    controller.builder = (BuildContext context) => typedDiagram;
-    controller.advanceTime(Duration.zero);
-    final RenderBox target = splashKey.currentContext.findRenderObject();
-    final Offset targetOffset = target.localToGlobal(target.size.bottomRight(Offset.zero));
+  Future<File> generateDiagram(InkResponseLargeDiagram diagram) async {
+    controller.builder = (BuildContext context) => diagram;
+    controller.advanceTime();
+    final RenderBox target =
+        splashKey.currentContext!.findRenderObject()! as RenderBox;
+    final Offset targetOffset =
+        target.localToGlobal(target.size.bottomRight(Offset.zero));
     final TestGesture gesture = await controller.startGesture(targetOffset);
     final File result = await controller.drawDiagramToFile(
-      new File('${diagram.name}.png'),
+      File('${diagram.name}.png'),
       timestamp: const Duration(milliseconds: 550),
     );
     await gesture.up();

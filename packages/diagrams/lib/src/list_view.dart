@@ -1,15 +1,14 @@
-// Copyright 2019 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:async';
 import 'dart:io';
-import 'package:diagram_capture/diagram_capture.dart';
 import 'package:flutter/material.dart';
 import 'diagram_step.dart';
 
 class ListViewDiagram extends StatelessWidget implements DiagramMetadata {
-  const ListViewDiagram(this.name);
+  const ListViewDiagram(this.name, {super.key});
 
   @override
   final String name;
@@ -73,36 +72,34 @@ class ListViewDiagram extends StatelessWidget implements DiagramMetadata {
         returnWidget = const Text('Error');
         break;
     }
-    return new ConstrainedBox(
-      key: new UniqueKey(),
-      constraints: new BoxConstraints.tight(const Size(400.0, 250.0)),
-      child: new Container(
-        alignment: FractionalOffset.center,
-        padding: const EdgeInsets.all(5.0),
-        color: Colors.white,
-        child: returnWidget
-      ),
+    return ConstrainedBox(
+      key: UniqueKey(),
+      constraints: BoxConstraints.tight(const Size(400.0, 250.0)),
+      child: Container(
+          alignment: FractionalOffset.center,
+          padding: const EdgeInsets.all(5.0),
+          color: Colors.white,
+          child: returnWidget),
     );
   }
 }
 
-class ListViewDiagramStep extends DiagramStep {
-  ListViewDiagramStep(DiagramController controller) : super(controller);
+class ListViewDiagramStep extends DiagramStep<ListViewDiagram> {
+  ListViewDiagramStep(super.controller);
 
   @override
   final String category = 'widgets';
 
   @override
-  Future<List<DiagramMetadata>> get diagrams async => <DiagramMetadata>[
+  Future<List<ListViewDiagram>> get diagrams async => <ListViewDiagram>[
         const ListViewDiagram('list_view'),
         const ListViewDiagram('list_view_builder'),
         const ListViewDiagram('list_view_separated'),
       ];
 
   @override
-  Future<File> generateDiagram(DiagramMetadata diagram) async {
-    final ListViewDiagram typedDiagram = diagram;
-    controller.builder = (BuildContext context) => typedDiagram;
-    return await controller.drawDiagramToFile(new File('${diagram.name}.png'));
+  Future<File> generateDiagram(ListViewDiagram diagram) async {
+    controller.builder = (BuildContext context) => diagram;
+    return controller.drawDiagramToFile(File('${diagram.name}.png'));
   }
 }

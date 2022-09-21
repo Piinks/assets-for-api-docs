@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -19,15 +19,15 @@ String _getCaption(Type type) {
 }
 
 /// Convert the caption CamelCase name into lower_with_underscores.
-String _getName(Type type) {
-  final RegExp uppercase = new RegExp(r'([A-Z])');
+String getName(Type type) {
+  final RegExp uppercase = RegExp(r'([A-Z])');
   return _getCaption(type).replaceAllMapped(
     uppercase,
     (Match match) {
       if (match.start != 0) {
-        return '_${match.group(1).toLowerCase()}';
+        return '_${match.group(1)!.toLowerCase()}';
       } else {
-        return match.group(1).toLowerCase();
+        return match.group(1)!.toLowerCase();
       }
     },
   );
@@ -35,11 +35,12 @@ String _getName(Type type) {
 
 /// A base class for diagrams that show explicit animation transitions, like
 /// [FadeTransition]. See transitions.dart for more examples.
-abstract class TransitionDiagram<T> extends StatefulWidget implements DiagramMetadata {
+abstract class TransitionDiagram<T> extends StatefulWidget
+    implements DiagramMetadata {
   const TransitionDiagram({
-    Key key,
+    super.key,
     this.decorate = true,
-  }) : super(key: key);
+  });
 
   /// Whether or not to decorate this diagram with an animation curve and top label.
   final bool decorate;
@@ -50,25 +51,25 @@ abstract class TransitionDiagram<T> extends StatefulWidget implements DiagramMet
   Widget buildTransition(BuildContext context, Animation<T> animation);
 
   @override
-  String get name => _getName(runtimeType) + (decorate ? '' : '_plain');
+  String get name => getName(runtimeType) + (decorate ? '' : '_plain');
 
   /// The label to be shown on the top of the diagram if [decorate] is true.
   String get caption => _getCaption(runtimeType);
 
   @override
-  TransitionDiagramState<T> createState() => new TransitionDiagramState<T>();
+  TransitionDiagramState<T> createState() => TransitionDiagramState<T>();
 }
 
 class TransitionDiagramState<T> extends State<TransitionDiagram<T>>
     with TickerProviderStateMixin<TransitionDiagram<T>> {
   bool selected = false;
-  Animation<T> animation;
-  AnimationController _controller;
+  late Animation<T> animation;
+  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = new AnimationController(
+    _controller = AnimationController(
       duration: _kAnimationDuration,
       vsync: this,
     )..addListener(() {
@@ -82,7 +83,7 @@ class TransitionDiagramState<T> extends State<TransitionDiagram<T>>
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -90,11 +91,11 @@ class TransitionDiagramState<T> extends State<TransitionDiagram<T>>
   Widget build(BuildContext context) {
     Widget child;
     if (widget.decorate) {
-      child = new Column(
+      child = Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          new Text(
+          Text(
             widget.caption,
             style: const TextStyle(
               color: Color(0xff000000),
@@ -102,17 +103,22 @@ class TransitionDiagramState<T> extends State<TransitionDiagram<T>>
               fontSize: _kFontSize,
             ),
           ),
-          new Container(
-            alignment: Alignment.center,
-            decoration: new BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(10.0)),
-              border: new Border.all(color: Colors.black26, width: 1.0),
+          Expanded(
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.all(Radius.circular(10.0)),
+                border: Border.all(color: Colors.black26),
+              ),
+              constraints: const BoxConstraints.tightFor(
+                width: 250.0,
+                height: 250.0,
+              ),
+              child: widget.buildTransition(context, animation),
             ),
-            constraints: const BoxConstraints.tightFor(width: 250.0, height: 250.0),
-            child: widget.buildTransition(context, animation),
           ),
-          new Container(height: 25.0),
-          new Container(
+          Container(height: 25.0),
+          SizedBox(
             width: 100.0,
             height: 50.0,
             child: Sparkline(curve: widget.curve, position: _controller.value),
@@ -123,18 +129,21 @@ class TransitionDiagramState<T> extends State<TransitionDiagram<T>>
       child = widget.buildTransition(context, animation);
     }
 
-    return new GestureDetector(
+    return GestureDetector(
       onTap: () {
         setState(() {
           selected = !selected;
           selected ? _controller.forward() : _controller.reverse();
         });
       },
-      child: new Container(
+      child: Container(
         // Height must be an even number for ffmpeg to be able to create a video
         // from the output.
-        constraints: new BoxConstraints.tightFor(width: widget.decorate ? 300.0 : 250.0, height: widget.decorate ? 378.0 : 250.0),
-        padding: new EdgeInsets.only(
+        constraints: BoxConstraints.tightFor(
+          width: widget.decorate ? 300.0 : 250.0,
+          height: widget.decorate ? 378.0 : 250.0,
+        ),
+        padding: EdgeInsets.only(
           top: 25.0 - (widget.decorate ? _kFontSize - 1.0 : 0.0),
           left: 25.0,
           right: 25.0,
@@ -147,29 +156,34 @@ class TransitionDiagramState<T> extends State<TransitionDiagram<T>>
   }
 }
 
-abstract class ImplicitAnimationDiagram<T> extends StatefulWidget implements DiagramMetadata {
-  const ImplicitAnimationDiagram({Key key}) : super(key: key);
+abstract class ImplicitAnimationDiagram<T> extends StatefulWidget
+    implements DiagramMetadata {
+  const ImplicitAnimationDiagram({super.key});
 
   /// The animation curve for the animation to use.
   Curve get curve;
   Widget buildImplicitAnimation(BuildContext context, bool selected);
 
   @override
-  String get name => _getName(runtimeType);
+  String get name => getName(runtimeType);
 
   String get caption => _getCaption(runtimeType);
 
+  Size get size => const Size(250.0, 250.0);
+
   @override
-  ImplicitAnimationDiagramState<T> createState() => new ImplicitAnimationDiagramState<T>();
+  ImplicitAnimationDiagramState<T> createState() =>
+      ImplicitAnimationDiagramState<T>();
 }
 
-class ImplicitAnimationDiagramState<T> extends State<ImplicitAnimationDiagram<T>> {
+class ImplicitAnimationDiagramState<T>
+    extends State<ImplicitAnimationDiagram<T>> {
   bool selected = false;
 
   @override
   Widget build(BuildContext context) {
     final Widget child = widget.buildImplicitAnimation(context, selected);
-    return new GestureDetector(
+    return GestureDetector(
       onTap: () {
         setState(() {
           selected = !selected;
@@ -181,7 +195,7 @@ class ImplicitAnimationDiagramState<T> extends State<ImplicitAnimationDiagram<T>
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            new Text(
+            Text(
               widget.caption,
               style: const TextStyle(
                 color: Color(0xff000000),
@@ -189,10 +203,13 @@ class ImplicitAnimationDiagramState<T> extends State<ImplicitAnimationDiagram<T>
                 fontSize: _kFontSize,
               ),
             ),
-            new Container(
+            Container(
               // Height must be an even number for ffmpeg to be able to create a video
               // from the output.
-              constraints: const BoxConstraints.tightFor(width: 250.0, height: 250.0),
+              constraints: BoxConstraints.tightFor(
+                width: widget.size.width,
+                height: widget.size.height,
+              ),
               padding: const EdgeInsets.only(
                 top: 25.0 - _kFontSize - 1.0,
                 left: 25.0,
@@ -216,24 +233,24 @@ class SparklinePainter extends CustomPainter {
   final Curve curve;
   final double position;
 
-  static final Paint _axisPaint = new Paint()
+  static final Paint _axisPaint = Paint()
     ..color = Colors.black45
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2.0;
 
-  static final Paint _sparklinePaint = new Paint()
+  static final Paint _sparklinePaint = Paint()
     ..color = Colors.blue.shade900
     ..style = PaintingStyle.stroke
     ..strokeCap = StrokeCap.round
     ..strokeWidth = 4.0;
 
-  static final Paint _graphProgressPaint = new Paint()
+  static final Paint _graphProgressPaint = Paint()
     ..color = Colors.black26
     ..style = PaintingStyle.stroke
     ..strokeCap = StrokeCap.round
     ..strokeWidth = 4.0;
 
-  static final Paint _positionCirclePaint = new Paint()
+  static final Paint _positionCirclePaint = Paint()
     ..color = Colors.blue.shade900
     ..style = PaintingStyle.fill;
 
@@ -245,41 +262,52 @@ class SparklinePainter extends CustomPainter {
     const double rightMargin = unit;
     const double topMargin = unit;
 
-    final Rect area = new Rect.fromLTRB(
+    final Rect area = Rect.fromLTRB(
       leftMargin,
       topMargin,
       size.width - rightMargin,
       size.height - topMargin,
     );
-    final Path axes = new Path()
+    final Path axes = Path()
       ..moveTo(area.left, area.top) // vertical axis
       ..lineTo(area.left, area.bottom) // origin
       ..lineTo(area.right, area.bottom); // horizontal axis
     canvas.drawPath(axes, _axisPaint);
-    final Offset activePoint = new FractionalOffset(
+    final Offset activePoint = FractionalOffset(
       position,
       1.0 - curve.transform(position),
     ).withinRect(area);
 
     // The sparkline itself.
-    final Path sparkline = new Path()..moveTo(area.left, area.bottom);
+    final Path sparkline = Path()..moveTo(area.left, area.bottom);
     final double stepSize = 1.0 / (area.width * ui.window.devicePixelRatio);
-    for (double t = 0.0; t <= position; t += stepSize) {
-      final Offset point = new FractionalOffset(t, 1.0 - curve.transform(t)).withinRect(area);
-      sparkline.lineTo(point.dx, point.dy);
+
+    void lineToPoint(Path path, double t) {
+      final Offset point =
+          FractionalOffset(t, 1.0 - curve.transform(t)).withinRect(area);
+      path.lineTo(point.dx, point.dy);
     }
+
+    for (double t = 0.0; t <= position; t += stepSize) {
+      lineToPoint(sparkline, t);
+    }
+    // In case the last value wasn't at position due to rounding.
+    lineToPoint(sparkline, position);
+
     canvas.drawPath(sparkline, _sparklinePaint);
-    final Offset startPoint = new FractionalOffset(
+    final Offset startPoint = FractionalOffset(
       position,
       1.0 - curve.transform(position),
     ).withinRect(area);
-    final Path graphProgress = new Path()..moveTo(startPoint.dx, startPoint.dy);
+    final Path graphProgress = Path()..moveTo(startPoint.dx, startPoint.dy);
     for (double t = position; t <= 1.0; t += stepSize) {
-      final Offset point = new FractionalOffset(t, 1.0 - curve.transform(t)).withinRect(area);
-      graphProgress.lineTo(point.dx, point.dy);
+      lineToPoint(graphProgress, t);
     }
+    // In case the last value wasn't at 1.0 due to rounding.
+    lineToPoint(graphProgress, 1.0);
     canvas.drawPath(graphProgress, _graphProgressPaint);
-    canvas.drawCircle(new Offset(activePoint.dx, activePoint.dy), 4.0, _positionCirclePaint);
+    canvas.drawCircle(
+        Offset(activePoint.dx, activePoint.dy), 4.0, _positionCirclePaint);
   }
 
   @override
@@ -289,19 +317,19 @@ class SparklinePainter extends CustomPainter {
 }
 
 class Sparkline extends StatelessWidget {
-  const Sparkline({Key key, this.curve, this.position});
+  const Sparkline({super.key, required this.curve, required this.position});
 
   final Curve curve;
   final double position;
 
   @override
   Widget build(BuildContext context) {
-    return new CustomPaint(painter: SparklinePainter(curve, position));
+    return CustomPaint(painter: SparklinePainter(curve, position));
   }
 }
 
 class SampleWidget extends StatelessWidget {
-  const SampleWidget({Key key, this.small = false}) : super(key: key);
+  const SampleWidget({super.key, this.small = false});
 
   final bool small;
 

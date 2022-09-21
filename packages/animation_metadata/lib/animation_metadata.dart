@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -13,29 +13,32 @@ class AnimationMetadata {
   AnimationMetadata.fromData({
     this.name,
     this.category,
-    this.duration,
-    this.frameRate,
-    this.frameFiles,
-    this.metadataFile,
+    required this.duration,
+    required this.frameRate,
+    required this.frameFiles,
+    required this.metadataFile,
   });
 
   factory AnimationMetadata.fromFile(File metadataFile) {
     assert(metadataFile.existsSync());
-    metadataFile = new File(path.normalize(metadataFile.absolute.path));
-    final Map<String, dynamic> metadata = json.decode(metadataFile.readAsStringSync());
+    metadataFile = File(path.normalize(metadataFile.absolute.path));
+    final Map<String, Object?> metadata =
+        json.decode(metadataFile.readAsStringSync()) as Map<String, dynamic>;
     final String baseDir = path.dirname(metadataFile.absolute.path);
-    final List<File> frameFiles = metadata[_frameFilesKey].map<File>(
-          (dynamic name) {
-        return new File(path.normalize(path.join(baseDir, name)));
+    final List<File> frameFiles =
+        (metadata[_frameFilesKey]! as List<dynamic>).map<File>(
+      (dynamic name) {
+        return File(path.normalize(path.join(baseDir, name.toString())));
       },
     ).toList();
-    final Duration duration = new Duration(milliseconds: metadata[_durationMsKey]);
-    return new AnimationMetadata.fromData(
+    final Duration duration =
+        Duration(milliseconds: metadata[_durationMsKey]! as int);
+    return AnimationMetadata.fromData(
       metadataFile: metadataFile,
-      name: metadata[_nameKey],
-      category: metadata[_categoryKey],
+      name: metadata[_nameKey]! as String,
+      category: metadata[_categoryKey]! as String,
       duration: duration,
-      frameRate: metadata[_frameRateKey],
+      frameRate: metadata[_frameRateKey]! as double,
       frameFiles: frameFiles,
     );
   }
@@ -53,22 +56,24 @@ class AnimationMetadata {
       _durationMsKey: duration.inMilliseconds,
       _frameRateKey: frameRate,
       _frameFilesKey: frameFiles.map<String>((File file) {
-        return path.relative(file.path, from: path.dirname(metadataFile.absolute.path));
+        return path.relative(file.path,
+            from: path.dirname(metadataFile.absolute.path));
       }).toList(),
     };
     const JsonEncoder encoder = JsonEncoder.withIndent('  ');
-    print('Metadata: $metadata');
     final String jsonMetadata = encoder.convert(metadata);
+    print(
+        'Writing metadata for ${duration.inMilliseconds}ms animation (${frameFiles.length} frames) to: ${metadataFile.path}');
     return metadataFile.writeAsString(jsonMetadata);
   }
 
   /// The category that this diagram is part of. This determines the output
   /// directory that it ends up in.
-  final String category;
+  final String? category;
 
   /// The base name of the diagram. This is the basis for the filenames that
   /// the diagram uses.
-  final String name;
+  final String? name;
 
   /// The frame rate, in frames per second, of the animation.
   final double frameRate;

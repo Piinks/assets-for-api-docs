@@ -1,15 +1,14 @@
-// Copyright 2019 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:async';
 import 'dart:io';
-import 'package:diagram_capture/diagram_capture.dart';
 import 'package:flutter/material.dart';
 import 'diagram_step.dart';
 
 class ListTileDiagram extends StatelessWidget implements DiagramMetadata {
-  const ListTileDiagram(this.name);
+  const ListTileDiagram(this.name, {super.key});
 
   @override
   final String name;
@@ -63,9 +62,8 @@ class ListTileDiagram extends StatelessWidget implements DiagramMetadata {
               child: ListTile(
                 leading: FlutterLogo(size: 72.0),
                 title: Text('Three-line ListTile'),
-                subtitle: Text(
-                  'A sufficiently long subtitle warrants three lines.'
-                ),
+                subtitle:
+                    Text('A sufficiently long subtitle warrants three lines.'),
                 trailing: Icon(Icons.more_vert),
                 isThreeLine: true,
               ),
@@ -77,21 +75,20 @@ class ListTileDiagram extends StatelessWidget implements DiagramMetadata {
   }
 }
 
-class ListTileDiagramStep extends DiagramStep {
-  ListTileDiagramStep(DiagramController controller) : super(controller);
+class ListTileDiagramStep extends DiagramStep<ListTileDiagram> {
+  ListTileDiagramStep(super.controller);
 
   @override
   final String category = 'material';
 
   @override
-  Future<List<DiagramMetadata>> get diagrams async => <DiagramMetadata>[
+  Future<List<ListTileDiagram>> get diagrams async => <ListTileDiagram>[
         const ListTileDiagram('list_tile'),
       ];
 
   @override
-  Future<File> generateDiagram(DiagramMetadata diagram) async {
-    final ListTileDiagram typedDiagram = diagram;
-    controller.builder = (BuildContext context) => typedDiagram;
-    return await controller.drawDiagramToFile(new File('${diagram.name}.png'));
+  Future<File> generateDiagram(ListTileDiagram diagram) async {
+    controller.builder = (BuildContext context) => diagram;
+    return controller.drawDiagramToFile(File('${diagram.name}.png'));
   }
 }

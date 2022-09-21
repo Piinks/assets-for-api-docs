@@ -1,15 +1,14 @@
-// Copyright 2019 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:async';
 import 'dart:io';
-import 'package:diagram_capture/diagram_capture.dart';
 import 'package:flutter/material.dart';
 import 'diagram_step.dart';
 
 class AlignDiagram extends StatelessWidget implements DiagramMetadata {
-  const AlignDiagram(this.name);
+  const AlignDiagram(this.name, {super.key});
 
   @override
   final String name;
@@ -40,7 +39,6 @@ class AlignDiagram extends StatelessWidget implements DiagramMetadata {
               child: logo,
             ),
             Align(
-              alignment: Alignment.center,
               child: origin,
             ),
           ],
@@ -67,15 +65,14 @@ class AlignDiagram extends StatelessWidget implements DiagramMetadata {
         containerChild = const Text('Error');
         break;
     }
-    return new ConstrainedBox(
-      key: new UniqueKey(),
-      constraints: new BoxConstraints.tight(const Size(250.0, 250.0)),
-      child: new Container(
+    return ConstrainedBox(
+      key: UniqueKey(),
+      constraints: BoxConstraints.tight(const Size(250.0, 250.0)),
+      child: Container(
         alignment: FractionalOffset.center,
         color: Colors.white,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.only(bottom: 10.0),
@@ -93,23 +90,22 @@ class AlignDiagram extends StatelessWidget implements DiagramMetadata {
   }
 }
 
-class AlignDiagramStep extends DiagramStep {
-  AlignDiagramStep(DiagramController controller) : super(controller);
+class AlignDiagramStep extends DiagramStep<AlignDiagram> {
+  AlignDiagramStep(super.controller);
 
   @override
   final String category = 'widgets';
 
   @override
-  Future<List<DiagramMetadata>> get diagrams async => <DiagramMetadata>[
+  Future<List<AlignDiagram>> get diagrams async => <AlignDiagram>[
         const AlignDiagram('align_constant'),
         const AlignDiagram('align_alignment'),
         const AlignDiagram('align_fractional_offset'),
       ];
 
   @override
-  Future<File> generateDiagram(DiagramMetadata diagram) async {
-    final AlignDiagram typedDiagram = diagram;
-    controller.builder = (BuildContext context) => typedDiagram;
-    return await controller.drawDiagramToFile(new File('${diagram.name}.png'));
+  Future<File> generateDiagram(AlignDiagram diagram) async {
+    controller.builder = (BuildContext context) => diagram;
+    return controller.drawDiagramToFile(File('${diagram.name}.png'));
   }
 }

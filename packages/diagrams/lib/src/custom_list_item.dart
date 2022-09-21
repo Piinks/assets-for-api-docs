@@ -1,10 +1,9 @@
-// Copyright 2019 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:async';
 import 'dart:io';
-import 'package:diagram_capture/diagram_capture.dart';
 import 'package:flutter/material.dart';
 import 'diagram_step.dart';
 
@@ -13,11 +12,10 @@ import 'diagram_step.dart';
 
 class _VideoDescription extends StatelessWidget {
   const _VideoDescription({
-    Key key,
-    this.title,
-    this.user,
-    this.viewCount,
-  }) : super(key: key);
+    required this.title,
+    required this.user,
+    required this.viewCount,
+  });
 
   final String title;
   final String user;
@@ -35,6 +33,7 @@ class _VideoDescription extends StatelessWidget {
             style: const TextStyle(
               fontWeight: FontWeight.w500,
               fontSize: 14.0,
+              height: 1.0,
             ),
           ),
           const Padding(padding: EdgeInsets.symmetric(vertical: 2.0)),
@@ -56,10 +55,11 @@ class _VideoDescription extends StatelessWidget {
 /// A sample list item that looks similar to a YouTube related video item.
 class CustomListItem extends StatelessWidget {
   const CustomListItem({
-    this.thumbnail,
-    this.title,
-    this.user,
-    this.viewCount,
+    required this.thumbnail,
+    required this.title,
+    required this.user,
+    required this.viewCount,
+    super.key,
   });
 
   final Widget thumbnail;
@@ -75,16 +75,16 @@ class CustomListItem extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Expanded(
-            child: thumbnail,
             flex: 2,
+            child: thumbnail,
           ),
           Expanded(
+            flex: 3,
             child: _VideoDescription(
               title: title,
               user: user,
               viewCount: viewCount,
             ),
-            flex: 3,
           ),
           const Icon(
             Icons.more_vert,
@@ -97,14 +97,13 @@ class CustomListItem extends StatelessWidget {
 }
 
 class _ArticleDescription extends StatelessWidget {
-  _ArticleDescription({
-    Key key,
-    this.title,
-    this.subtitle,
-    this.author,
-    this.publishDate,
-    this.readDuration,
-  }) : super(key: key);
+  const _ArticleDescription({
+    required this.title,
+    required this.subtitle,
+    required this.author,
+    required this.publishDate,
+    required this.readDuration,
+  });
 
   final String title;
   final String subtitle;
@@ -118,11 +117,12 @@ class _ArticleDescription extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Expanded(
+          flex: 2,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
-                '$title',
+                title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -131,7 +131,7 @@ class _ArticleDescription extends StatelessWidget {
               ),
               const Padding(padding: EdgeInsets.only(bottom: 2.0)),
               Text(
-                '$subtitle',
+                subtitle,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -141,7 +141,6 @@ class _ArticleDescription extends StatelessWidget {
               ),
             ],
           ),
-          flex: 2,
         ),
         Expanded(
           child: Column(
@@ -149,7 +148,7 @@ class _ArticleDescription extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: <Widget>[
               Text(
-                '$author',
+                author,
                 style: const TextStyle(
                   fontSize: 12.0,
                   color: Colors.black87,
@@ -164,7 +163,6 @@ class _ArticleDescription extends StatelessWidget {
               ),
             ],
           ),
-          flex: 1,
         ),
       ],
     );
@@ -174,14 +172,14 @@ class _ArticleDescription extends StatelessWidget {
 /// A sample article list item with multi-line [title] and [subtitle]s.
 class CustomListItemTwo extends StatelessWidget {
   const CustomListItemTwo({
-    Key key,
-    this.thumbnail,
-    this.title,
-    this.subtitle,
-    this.author,
-    this.publishDate,
-    this.readDuration,
-  }) : super(key: key);
+    super.key,
+    required this.thumbnail,
+    required this.title,
+    required this.subtitle,
+    required this.author,
+    required this.publishDate,
+    required this.readDuration,
+  });
 
   final Widget thumbnail;
   final String title;
@@ -195,7 +193,7 @@ class CustomListItemTwo extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: SizedBox(
-        height: 100,
+        height: 120,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -221,8 +219,9 @@ class CustomListItemTwo extends StatelessWidget {
     );
   }
 }
+
 class CustomListItemDiagram extends StatelessWidget implements DiagramMetadata {
-  const CustomListItemDiagram(this.name);
+  const CustomListItemDiagram(this.name, {super.key});
 
   @override
   final String name;
@@ -262,9 +261,8 @@ class CustomListItemDiagram extends StatelessWidget implements DiagramMetadata {
             ),
           ),
         );
-        break;
       case 'custom_list_item_b':
-       return ConstrainedBox(
+        return ConstrainedBox(
           key: UniqueKey(),
           constraints: BoxConstraints.tight(const Size(400.0, 265.0)),
           child: Container(
@@ -280,8 +278,8 @@ class CustomListItemDiagram extends StatelessWidget implements DiagramMetadata {
                   ),
                   title: 'Flutter 1.0 Launch',
                   subtitle:
-                    'Flutter continues to improve and expand its horizons.'
-                    'This text should max out at two lines and clip',
+                      'Flutter continues to improve and expand its horizons. '
+                      'This text should max out at two lines and clip',
                   author: 'Dash',
                   publishDate: 'Dec 28',
                   readDuration: '5 mins',
@@ -290,7 +288,8 @@ class CustomListItemDiagram extends StatelessWidget implements DiagramMetadata {
                   thumbnail: Container(
                     decoration: const BoxDecoration(color: Colors.blue),
                   ),
-                  title: 'Flutter 1.2 Release - Continual updates to the framework',
+                  title:
+                      'Flutter 1.2 Release - Continual updates to the framework',
                   subtitle: 'Flutter once again improves and makes updates.',
                   author: 'Flutter',
                   publishDate: 'Feb 26',
@@ -299,33 +298,31 @@ class CustomListItemDiagram extends StatelessWidget implements DiagramMetadata {
               ],
             ),
           ),
-       );
-        break;
+        );
       default:
         return const Text('Error');
-        break;
     }
   }
 }
 
-class CustomListItemDiagramStep extends DiagramStep {
-  CustomListItemDiagramStep(DiagramController controller) : super(controller);
+class CustomListItemDiagramStep extends DiagramStep<CustomListItemDiagram> {
+  CustomListItemDiagramStep(super.controller);
 
   @override
   final String category = 'widgets';
 
   @override
-  Future<List<DiagramMetadata>> get diagrams async => <DiagramMetadata>[
-    const CustomListItemDiagram('custom_list_item_a'),
-    const CustomListItemDiagram('custom_list_item_b'),
-  ];
+  Future<List<CustomListItemDiagram>> get diagrams async =>
+      <CustomListItemDiagram>[
+        const CustomListItemDiagram('custom_list_item_a'),
+        const CustomListItemDiagram('custom_list_item_b'),
+      ];
 
   @override
-  Future<File> generateDiagram(DiagramMetadata diagram) async {
-    final CustomListItemDiagram typedDiagram = diagram;
-    controller.builder = (BuildContext context) => typedDiagram;
-    return await controller.drawDiagramToFile(
-      new File('${diagram.name}.png'),
+  Future<File> generateDiagram(CustomListItemDiagram diagram) async {
+    controller.builder = (BuildContext context) => diagram;
+    return controller.drawDiagramToFile(
+      File('${diagram.name}.png'),
     );
   }
 }

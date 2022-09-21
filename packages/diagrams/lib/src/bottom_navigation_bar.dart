@@ -1,25 +1,25 @@
-// Copyright 2019 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:async';
 import 'dart:io';
-import 'package:diagram_capture/diagram_capture.dart';
 import 'package:flutter/material.dart';
 import 'diagram_step.dart';
 
-class BottomNavigationBarDiagram extends StatelessWidget implements DiagramMetadata {
-  const BottomNavigationBarDiagram(this.name);
+class BottomNavigationBarDiagram extends StatelessWidget
+    implements DiagramMetadata {
+  const BottomNavigationBarDiagram(this.name, {super.key});
 
   @override
   final String name;
 
   @override
   Widget build(BuildContext context) {
-    return new ConstrainedBox(
-      key: new UniqueKey(),
-      constraints: new BoxConstraints.tight(const Size(350, 600)),
-      child: new Container(
+    return ConstrainedBox(
+      key: UniqueKey(),
+      constraints: BoxConstraints.tight(const Size(350, 600)),
+      child: Container(
         alignment: FractionalOffset.center,
         //padding: const EdgeInsets.all(5.0),
         color: Colors.white,
@@ -37,20 +37,18 @@ class BottomNavigationBarDiagram extends StatelessWidget implements DiagramMetad
             items: const <BottomNavigationBarItem>[
               BottomNavigationBarItem(
                 icon: Icon(Icons.home),
-                title: Text('Home'),
+                label: 'Home',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.business),
-                title: Text('Business'),
+                label: 'Business',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.school),
-                title: Text('School'),
+                label: 'School',
               ),
             ],
-            currentIndex: 0,
             selectedItemColor: Colors.amber[800],
-            onTap: null,
           ),
         ),
       ),
@@ -58,21 +56,22 @@ class BottomNavigationBarDiagram extends StatelessWidget implements DiagramMetad
   }
 }
 
-class BottomNavigationBarDiagramStep extends DiagramStep {
-  BottomNavigationBarDiagramStep(DiagramController controller) : super(controller);
+class BottomNavigationBarDiagramStep
+    extends DiagramStep<BottomNavigationBarDiagram> {
+  BottomNavigationBarDiagramStep(super.controller);
 
   @override
   final String category = 'material';
 
   @override
-  Future<List<DiagramMetadata>> get diagrams async => <DiagramMetadata>[
-    const BottomNavigationBarDiagram('bottom_navigation_bar'),
-  ];
+  Future<List<BottomNavigationBarDiagram>> get diagrams async =>
+      <BottomNavigationBarDiagram>[
+        const BottomNavigationBarDiagram('bottom_navigation_bar'),
+      ];
 
   @override
-  Future<File> generateDiagram(DiagramMetadata diagram) async {
-    final BottomNavigationBarDiagram typedDiagram = diagram;
-    controller.builder = (BuildContext context) => typedDiagram;
-    return await controller.drawDiagramToFile(new File('${diagram.name}.png'));
+  Future<File> generateDiagram(BottomNavigationBarDiagram diagram) async {
+    controller.builder = (BuildContext context) => diagram;
+    return controller.drawDiagramToFile(File('${diagram.name}.png'));
   }
 }
